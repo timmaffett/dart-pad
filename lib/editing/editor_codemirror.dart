@@ -51,6 +51,7 @@ class CodeMirrorFactory extends EditorFactory {
       'extraKeys': {
         'Cmd-/': 'toggleComment',
         'Ctrl-/': 'toggleComment',
+        'F11': 'toggleFullWindowOnOff',
         'Tab': 'insertSoftTab'
       },
       'hintOptions': {'completeSingle': false},
@@ -60,6 +61,7 @@ class CodeMirrorFactory extends EditorFactory {
 
     final editor = CodeMirror.fromElement(element, options: options);
     CodeMirror.addCommand('goLineLeft', _handleGoLineLeft);
+    CodeMirror.addCommand('toggleFullWindowOnOff', _toggleFullWindowOnOff);
     return _CodeMirrorEditor._(this, editor);
   }
 
@@ -74,6 +76,12 @@ class CodeMirrorFactory extends EditorFactory {
   // Change the cmd-left behavior to move the cursor to the leftmost non-ws char.
   void _handleGoLineLeft(CodeMirror editor) {
     editor.execCommand('goLineLeftSmart');
+  }
+
+  void _toggleFullWindowOnOff(CodeMirror editor) {
+    final bool currentFullscreenState =
+        (editor.getOption('fullScreen') ?? false) as bool;
+    editor.setOption('fullScreen', !currentFullscreenState);
   }
 
   Future<HintResults> _completionHelper(

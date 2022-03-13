@@ -11,6 +11,7 @@ const codeMirrorOptions = {
   'extraKeys': {
     'Cmd-/': 'toggleComment',
     'Ctrl-/': 'toggleComment',
+    'F11': 'toggleFullWindowOnOff',
     'Tab': 'insertSoftTab'
   },
   'hintOptions': {'completeSingle': false},
