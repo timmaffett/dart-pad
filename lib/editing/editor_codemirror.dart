@@ -62,11 +62,66 @@ class CodeMirrorFactory extends EditorFactory {
         'Ctrl-/': 'toggleComment',
         'Shift-Tab': 'indentLess',
         'Tab': 'indentIfMultiLineSelectionElseInsertSoftTab',
+        // android studio folding - browser takes ctrl-+ and ctrl-- for zoom
+        // 'Ctrl--': 'ourFoldWithCursorToStart',
+        // 'Cmd--': 'ourFoldWithCursorToStart',
+        // 'Ctrl-+': 'unfold',
+        // 'Cmd-+': 'unfold',
+        // 'Shift-Ctrl--': 'foldAll',
+        // 'Shift-Cmd--': 'foldAll',
+        // 'Shift-Ctrl-+': 'unfoldAll',
+        // 'Shift-Cmd-+': 'unfoldAll',
+        // vscode folding (pc/mac)
+        'Shift-Ctrl-[': 'ourFoldWithCursorToStart',
+        'Cmd-Alt-[': 'ourFoldWithCursorToStart',
+        'Shift-Ctrl-]': 'unfold',
+        'Cmd-Alt-]': 'unfold',
+        // 'Ctrl-K Ctrl-0': 'foldAll',  browser takes Ctrl-K
+        // 'Cmd-K Cmd-0': 'foldAll',
+        // 'Ctrl-K Ctrl-J': 'unfoldAll',
+        // 'Cmd-K Cmd-J': 'unfoldAll',
+        'Shift-Ctrl-Alt-[':
+            'foldAll', // made our own keycombo since VSCode and AndroidStudios
+        'Shift-Cmd-Alt-[': 'foldAll', //  are taken by browser
+        'Shift-Ctrl-Alt-]': 'unfoldAll',
+        'Shift-Cmd-Alt-]': 'unfoldAll',
       },
+      'scrollbarStyle': 'simple',
+      'foldGutter': true,
+      'foldOptions': {
+        'minFoldSize': 1,
+        'widget': '\u00b7\u00b7\u00b7', // like '...', but middle dots
+      },
+      'matchTags': {
+        'bothTags': true,
+      },
+      'gutters': ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
       'hintOptions': {'completeSingle': false},
       //'lint': true,
-      'theme': 'zenburn' // ambiance, vibrant-ink, monokai, zenburn
+      'theme': 'zenburn', // ambiance, vibrant-ink, monokai, zenburn
     };
+
+/*
+       
+
+       Fold folds the innermost uncollapsed region at the cursor:
+
+Ctrl + Shift + [ on Windows and Linux
+⌥ + ⌘ + [ on macOS
+Unfold unfolds the collapsed region at the cursor:
+
+Ctrl + Shift + ] on Windows and Linux
+⌥ + ⌘ + ] on macOS
+Fold All folds all regions in the editor:
+
+Ctrl + (K => 0) (zero) on Windows and Linux
+⌘ + (K => 0) (zero) on macOS
+Unfold All unfolds all regions in the editor:
+
+Ctrl + (K => J) on Windows and Linux
+⌘ + (K => J) on macOS
+
+*/
 
     final editor = CodeMirror.fromElement(element, options: options);
     CodeMirror.addCommand('goLineLeft', _handleGoLineLeft);
