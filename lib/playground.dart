@@ -192,7 +192,7 @@ class Playground extends EditorUi implements GistContainer, GistController {
     _formatButton.onClick.listen((_) => _format());
     _consoleClearLeftButton.onClick.listen(  //(_) => clearOutput());
           (_) {
-    gistLoader.fuckSaveGist(mutableGist.backingGist).then((String createdGistId) {
+    gistLoader.saveGist(mutableGist.backingGist).then((String createdGistId) {
         window.console.log('Got created Gist ID =$createdGistId');
         showOutput('Got created Gist ID =$createdGistId');
         queryParams.gistId = createdGistId;
