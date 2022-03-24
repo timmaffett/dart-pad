@@ -190,7 +190,15 @@ class Playground extends EditorUi implements GistContainer, GistController {
         .onClick
         .listen((_) => _showResetDialog());
     _formatButton.onClick.listen((_) => _format());
-    _consoleClearLeftButton.onClick.listen((_) => clearOutput());
+    _consoleClearLeftButton.onClick.listen(  //(_) => clearOutput());
+          (_) {
+    gistLoader.fuckSaveGist(mutableGist.backingGist).then((String createdGistId) {
+        window.console.log('Got created Gist ID =$createdGistId');
+        showOutput('Got created Gist ID =$createdGistId');
+        queryParams.gistId = createdGistId;
+    });
+          } );
+    
     MDCButton(querySelector('#right-console-clear-button') as ButtonElement,
             isIcon: true)
         .onClick
@@ -825,9 +833,12 @@ class Playground extends EditorUi implements GistContainer, GistController {
 
   @override
   void clearOutput() {
-    _rightConsole.clear();
-    _leftConsole.clear();
-    _unreadConsoleCounter.clear();
+
+
+
+    //_rightConsole.clear();
+    //_leftConsole.clear();
+    //_unreadConsoleCounter.clear();
   }
 
   @override

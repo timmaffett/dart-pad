@@ -233,6 +233,128 @@ $styleRef$dartRef  </head>
     return gist;
   }
 
+  /// Load the gist with the given id.
+  Future<String> saveGist(Gist gistToSave) async {
+
+    if(beforeSaveHook!=null) beforeSaveHook!(gistToSave);
+
+    String retId='FAILED';
+    /*
+Create a gist
+Allows you to add a new gist with one or more files.
+
+Note: Don't name your files "gistfile" with a numerical suffix. 
+This is the format of the automatic naming scheme that Gist uses 
+internally.
+
+POST /gists
+Parameters
+Name      	Type    	In	        Description
+accept    	string  	header	   Setting toapplication/vnd.github.v3+json is recommended.
+
+description  string   body	      Description of the gist
+
+files       object	  body	      Required. Names and content for the files that make up the gist
+
+public	    boolean   body        Flag indicating whether the gist is public     
+            or string
+            
+Code samples
+curl \
+  -X POST \
+  -H "Accept: application/vnd.github.v3+json" \
+  https://api.github.com/gists \
+  -d '{"files":{}}'
+
+Response
+
+ Status: 201 Created
+ {
+  "url": "https://api.github.com/gists/aa5a315d61ae9438b18d",
+  "forks_url": "https://api.github.com/gists/aa5a315d61ae9438b18d/forks",
+  "commits_url": "https://api.github.com/gists/aa5a315d61ae9438b18d/commits",
+  "id": "aa5a315d61ae9438b18d",
+  "node_id": "MDQ6R2lzdGFhNWEzMTVkNjFhZTk0MzhiMThk",
+  "git_pull_url": "https://gist.github.com/aa5a315d61ae9438b18d.git",
+  "git_push_url": "https://gist.github.com/aa5a315d61ae9438b18d.git",
+  "html_url": "https://gist.github.com/aa5a315d61ae9438b18d",
+  "created_at": "2010-04-14T02:15:15Z",
+  "updated_at": "2011-06-20T11:34:15Z",
+  "description": "Hello World Examples",
+  "comments": 0,
+  "comments_url": "https://api.github.com/gists/aa5a315d61ae9438b18d/comments/"
+}
+    */
+    // Load the gist using the github gist API:
+    // https://developer.github.com/v3/gists/#get-a-single-gist.
+    const String timsToken='XXXX';
+    final Map<String, dynamic> map = gistToSave.toMap();//;
+    map.remove('id');
+    final String bodydata = json.encode(map);
+    print(bodydata);
+
+    final response = await _client.post(Uri.parse(_gistApiUrl),
+                headers:{
+                    'Accept':'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json',
+                   // 'Authorization': 'Bearer $timsToken',
+                },
+                body:bodydata
+        ).then((http.Response response) {
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.contentLength}');
+    print(response.headers);
+    print(response.request);
+    if (response.statusCode == 201) {
+      print('CREATION WORKED!');
+      final retObj = jsonDecode(response.body);
+      print('ID = ${retObj['id']}');
+      retId = retObj['id'] as String;
+    } else if (response.statusCode == 404) {
+      throw const GistLoaderException(GistLoaderFailureType.contentNotFound);
+    } else if (response.statusCode == 403) {
+      throw const GistLoaderException(GistLoaderFailureType.rateLimitExceeded);
+    } else if (response.statusCode != 200) {
+      throw const GistLoaderException(GistLoaderFailureType.unknown);
+    }
+  });
+    return retId;
+  }
+/*
+const TOKEN = "YOUR_PERSONAL_ACCESS_TOKEN";
+const GIST_ID = "YOUR_GIST_ID";
+const GIST_FILENAME = "db.json";
+
+/* 
+ * Reads the JSON file inside of the gist
+ */
+async function getData() {
+  const req = await fetch(`https://api.github.com/gists/${GIST_ID}`);
+  const gist = await req.json();
+  return JSON.parse(gist.files[GIST_FILENAME].content);
+}
+
+/* 
+ * Puts the data you want to store back into the gist
+ */
+async function setData(data) {
+  const req = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${TOKEN}`,
+    },
+    body: JSON.stringify({
+      files: {
+        [GIST_FILENAME]: {
+          content: JSON.stringify(data),
+        },
+      },
+    }),
+  });
+
+  return req.json();
+}
+*/
   Future<Gist> loadGistFromAPIDocs(
       String sampleId, FlutterSdkChannel channel) async {
     if (channel == FlutterSdkChannel.beta) {
