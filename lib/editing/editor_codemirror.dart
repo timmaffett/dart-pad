@@ -74,24 +74,11 @@ class CodeMirrorFactory extends EditorFactory {
         'Shift-Cmd-G': 'weHandleElsewhere',
         'F4': 'weHandleElsewhere',
         'Shift-F4': 'weHandleElsewhere',
-        // android studio folding - browser takes ctrl-+ and ctrl-- for zoom
-        // 'Ctrl--': 'ourFoldWithCursorToStart',
-        // 'Cmd--': 'ourFoldWithCursorToStart',
-        // 'Ctrl-+': 'unfold',
-        // 'Cmd-+': 'unfold',
-        // 'Shift-Ctrl--': 'foldAll',
-        // 'Shift-Cmd--': 'foldAll',
-        // 'Shift-Ctrl-+': 'unfoldAll',
-        // 'Shift-Cmd-+': 'unfoldAll',
         // vscode folding (pc/mac)
         'Shift-Ctrl-[': 'ourFoldWithCursorToStart',
         'Cmd-Alt-[': 'ourFoldWithCursorToStart',
         'Shift-Ctrl-]': 'unfold',
         'Cmd-Alt-]': 'unfold',
-        // 'Ctrl-K Ctrl-0': 'foldAll',  browser takes Ctrl-K
-        // 'Cmd-K Cmd-0': 'foldAll',
-        // 'Ctrl-K Ctrl-J': 'unfoldAll',
-        // 'Cmd-K Cmd-J': 'unfoldAll',
         'Shift-Ctrl-Alt-[':
             'foldAll', // made our own keycombo since VSCode and AndroidStudios
         'Shift-Cmd-Alt-[': 'foldAll', //  are taken by browser
