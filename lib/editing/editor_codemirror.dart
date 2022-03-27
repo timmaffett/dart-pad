@@ -85,7 +85,6 @@ class CodeMirrorFactory extends EditorFactory {
         'Shift-Ctrl-Alt-]': 'unfoldAll',
         'Shift-Cmd-Alt-]': 'unfoldAll',
       },
-      'scrollbarStyle': 'simple',
       'foldGutter': true,
       'foldOptions': {
         'minFoldSize': 1,
@@ -95,37 +94,16 @@ class CodeMirrorFactory extends EditorFactory {
         'bothTags': true,
       },
       'gutters': ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-      'hintOptions': {'completeSingle': false},
       'highlightSelectionMatches': {
         'style': 'highlight-selection-matches',
         'showToken': false,
         'annotateScrollbar': true,
       },
+      'hintOptions': {'completeSingle': false},
+      'scrollbarStyle': 'simple',
       //'lint': true,
       'theme': 'zenburn', // ambiance, vibrant-ink, monokai, zenburn
     };
-
-/*
-       
-
-       Fold folds the innermost uncollapsed region at the cursor:
-
-Ctrl + Shift + [ on Windows and Linux
-⌥ + ⌘ + [ on macOS
-Unfold unfolds the collapsed region at the cursor:
-
-Ctrl + Shift + ] on Windows and Linux
-⌥ + ⌘ + ] on macOS
-Fold All folds all regions in the editor:
-
-Ctrl + (K => 0) (zero) on Windows and Linux
-⌘ + (K => 0) (zero) on macOS
-Unfold All unfolds all regions in the editor:
-
-Ctrl + (K => J) on Windows and Linux
-⌘ + (K => J) on macOS
-
-*/
 
     final editor = CodeMirror.fromElement(element, options: options);
     CodeMirror.addCommand('goLineLeft', _handleGoLineLeft);
