@@ -60,6 +60,7 @@ class CodeMirrorFactory extends EditorFactory {
       'viewportMargin': 100,
       //'gutters': [_gutterId],
       'extraKeys': {
+        'F11': 'toggleFullWindowOnOff',
         'Cmd-/': 'toggleComment',
         'Ctrl-/': 'toggleComment',
         'Shift-Tab': 'indentLess',
@@ -92,6 +93,7 @@ class CodeMirrorFactory extends EditorFactory {
     CodeMirror.addCommand('weHandleElsewhere', _weHandleElsewhere);
     CodeMirror.addCommand(
         'ourSearchQueryUpdatedCallback', _ourSearchQueryUpdatedCallback);
+    CodeMirror.addCommand('toggleFullWindowOnOff', _toggleFullWindowOnOff);
     return _CodeMirrorEditor._(this, editor);
   }
 
@@ -146,6 +148,12 @@ class CodeMirrorFactory extends EditorFactory {
     }
   }
 
+  void _toggleFullWindowOnOff(CodeMirror editor) {
+    final bool currentFullscreenState =
+        (editor.getOption('fullScreen') ?? false) as bool;
+    editor.setOption('fullScreen', !currentFullscreenState);
+  }
+  
   Future<HintResults> _completionHelper(
       CodeMirror editor, CodeCompleter completer, HintsOptions? options) {
     final ed = _CodeMirrorEditor._fromExisting(this, editor);

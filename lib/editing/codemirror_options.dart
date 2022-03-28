@@ -19,7 +19,8 @@ const codeMirrorOptions = {
   'indentUnit': 2,
   'cursorHeight': 0.85,
   'viewportMargin': 100,
-  'extraKeys': {
+'extraKeys': {
+    'F11': 'toggleFullWindowOnOff',
     'Cmd-/': 'toggleComment',
     'Ctrl-/': 'toggleComment',
     'Shift-Tab': 'indentLess',
