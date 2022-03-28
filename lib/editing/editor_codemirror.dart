@@ -74,13 +74,13 @@ class CodeMirrorFactory extends EditorFactory {
         'Shift-Cmd-G': 'weHandleElsewhere',
         'F4': 'weHandleElsewhere',
         'Shift-F4': 'weHandleElsewhere',
-        // vscode folding (pc/mac)
+        // vscode folding key combos (pc/mac)
         'Shift-Ctrl-[': 'ourFoldWithCursorToStart',
         'Cmd-Alt-[': 'ourFoldWithCursorToStart',
         'Shift-Ctrl-]': 'unfold',
         'Cmd-Alt-]': 'unfold',
         'Shift-Ctrl-Alt-[':
-            'foldAll', // made our own keycombo since VSCode and AndroidStudios
+            'foldAll', // made our own keycombo since VSCode and AndroidStudio's
         'Shift-Cmd-Alt-[': 'foldAll', //  are taken by browser
         'Shift-Ctrl-Alt-]': 'unfoldAll',
         'Shift-Cmd-Alt-]': 'unfoldAll',

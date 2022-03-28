@@ -34,7 +34,7 @@ const codeMirrorOptions = {
     'Shift-Cmd-G': 'weHandleElsewhere',
     'F4': 'weHandleElsewhere',
     'Shift-F4': 'weHandleElsewhere',
-    // vscode folding (pc/mac)
+    // vscode folding key combos (pc/mac)
     'Shift-Ctrl-[': 'ourFoldWithCursorToStart',
     'Cmd-Alt-[': 'ourFoldWithCursorToStart',
     'Shift-Ctrl-]': 'unfold',
