@@ -105,11 +105,16 @@ class Playground extends EditorUi implements GistContainer, GistController {
   late final List<Channel> channels;
 
   static Future<Playground> initialize() async {
+    window.console.log(
+        'Playground initialize() window.location.toString()=${window.location.toString()} ');
+
     await _initModules();
     return Playground._();
   }
 
   Playground._() {
+    window.console.log(
+        'Playground _() window.location.toString()=${window.location.toString()} ');
     _checkLocalStorage();
     _initPlayground();
     _initBusyLights();
@@ -268,6 +273,48 @@ class Playground extends EditorUi implements GistContainer, GistController {
       listElement.children.add(menuElement);
     }
 
+//SUBMENU TIM
+    final itemSpan = SpanElement()
+      ..classes.add('mdc-list-item__text')
+      ..text = 'Test SubMenu';
+    final itemSubParentSpan = SpanElement()
+      ..classes.add('mdc-menu')
+      ..classes.add('mdc-menu-surface')
+      ..text = 'Test SubMenu';
+    final submenuElement =
+        _mdcListItem(children: [itemSpan, itemSubParentSpan]);
+    listElement.children.add(submenuElement);
+
+    final submenuListElement = _mdcList();
+    // element.children.add(listElement);
+
+    for (final sample in samples) {
+      final menuElement = _mdcListItem(children: [
+        ImageElement()
+          ..classes.add('mdc-list-item__graphic')
+          ..src = 'pictures/logo_${_layoutToString(sample.layout)}.png',
+        SpanElement()
+          ..classes.add('mdc-list-item__text')
+          ..text = sample.name,
+      ]);
+      submenuListElement.children.add(menuElement);
+    }
+
+    final submenuSamplesMenu = MDCMenu(itemSubParentSpan)
+      ..setAnchorCorner(AnchorCorner.bottomLeft)
+      ..setAnchorElement(_samplesDropdownButton)
+      ..hoistMenuToBody();
+
+    submenuSamplesMenu.listen('MDCMenu:selected', (e) {
+      final index = (e as CustomEvent).detail['index'] as int;
+      window.console.log('index on submenu chosen is $index');
+      //final gistId = samples.elementAt(index).gistId;
+      //showGist(gistId);
+    });
+
+    submenuElement.onClick.listen((e) => toggleMenu(submenuSamplesMenu));
+//END TIM
+
     final samplesMenu = MDCMenu(element)
       ..setAnchorCorner(AnchorCorner.bottomLeft)
       ..setAnchorElement(_samplesDropdownButton)
@@ -275,6 +322,7 @@ class Playground extends EditorUi implements GistContainer, GistController {
 
     samplesMenu.listen('MDCMenu:selected', (e) {
       final index = (e as CustomEvent).detail['index'] as int;
+      if (index >= samples.length) return;
       final gistId = samples.elementAt(index).gistId;
       showGist(gistId);
     });
@@ -945,7 +993,9 @@ class Playground extends EditorUi implements GistContainer, GistController {
     final buttonText =
         _channelsDropdownButton.querySelector('.mdc-button__label')!;
     buttonText.text = '$channel channel';
+
     dartServices.rootUrl = Channel.urlMapping[channel]!;
+
     updateVersions();
     performAnalysis();
 
