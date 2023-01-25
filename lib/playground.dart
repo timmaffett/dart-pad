@@ -20,7 +20,6 @@ import 'core/keys.dart';
 import 'core/modules.dart';
 import 'dart_pad.dart';
 import 'documentation.dart';
-import 'editing/codemirror_options.dart';
 import 'editing/editor_codemirror.dart';
 import 'elements/analysis_results_controller.dart';
 import 'elements/bind.dart';
@@ -251,8 +250,10 @@ class Playground extends EditorUi implements GistContainer, GistController {
       Sample(
           '493c8b3ef8931cbac3fbbe5c04b9c4cf', 'Google Fonts', Layout.flutter),
       Sample('a133148221a8cbacbcef8bc77a6c82ec', 'Provider', Layout.flutter),
+      Sample('ef06ab3ce0b822e6cc5db0575248e6e2', 'Riverpod', Layout.flutter),
       Sample(
           'fdd369962f4ff6700a83c8a540fd6c4c', 'Flutter Bloc', Layout.flutter),
+      Sample('4a546fc44db8aca351bfe791e251acc2', 'GoRouter', Layout.flutter),
       Sample('c0f7c578204d61e08ec0fbc4d63456cd', 'Hello World', Layout.dart),
       Sample('d3bd83918d21b6d5f778bdc69c3d36d6', 'Fibonacci', Layout.dart),
       Sample('4a68e553746602d851ab3da6aeafc3dd', 'HTTP requests', Layout.dart),
@@ -400,6 +401,11 @@ class Playground extends EditorUi implements GistContainer, GistController {
                   ..text =
                       'Use Flutter version ${channel.flutterVersion} and Dart '
                           'version ${channel.dartVersion}',
+                if (channel.experiments.isNotEmpty)
+                  ParagraphElement()
+                    ..classes.add('mdc-list-item__details')
+                    ..text = '+ Dart experiments: '
+                        "--enable-experiment=${channel.experiments.reduce((value, element) => '$value,$element')}",
               ],
           ],
       ])
@@ -419,6 +425,7 @@ class Playground extends EditorUi implements GistContainer, GistController {
       Channel.fromVersion('stable'),
       Channel.fromVersion('beta'),
       Channel.fromVersion('old'),
+      Channel.fromVersion('master'),
       Channel.fromVersion('dev', hidden: true),
     ]);
 
@@ -441,7 +448,8 @@ class Playground extends EditorUi implements GistContainer, GistController {
 
   void _handleChannelsMenuSelected(e) {
     final index = (e as CustomEvent).detail['index'] as int;
-    final channel = Channel.urlMapping.keys.toList()[index];
+    // Use menu index BACK into channels array it was created from to get channel name.
+    final channel = channels[index].name;
     _handleChannelSwitched(channel);
   }
 
@@ -578,8 +586,7 @@ class Playground extends EditorUi implements GistContainer, GistController {
     deps[GistLoader] = GistLoader.defaultFilters();
 
     // Set up CodeMirror
-    editor = (editorFactory as CodeMirrorFactory)
-        .createFromElement(_editorHost, options: codeMirrorOptions)
+    editor = (editorFactory as CodeMirrorFactory).createFromElement(_editorHost)
       ..theme = 'darkpad'
       ..mode = 'dart'
       ..keyMap = window.localStorage['codemirror_keymap'] ?? 'default'
@@ -1148,12 +1155,37 @@ class NewPadDialog {
 
   Future<Layout?> show() {
     final completer = Completer<Layout?>();
-    final dartSub = _dartButton.root.onClick.listen((_) {
+
+    void completeDart() {
       completer.complete(_htmlSwitch.checked! ? Layout.html : Layout.dart);
+    }
+
+    final dartSub = _dartButton.root.onClick.listen((_) {
+      completeDart();
+    });
+    final dartKeydownSub = _dartButton.root.onKeyDown.listen((event) {
+      if (event.key == 'Enter') {
+        completeDart();
+      }
+    });
+    final dartKeyupSub = _dartButton.root.onKeyUp.listen((event) {
+      if (event.key == ' ' || event.key == 'Spacebar') {
+        completeDart();
+      }
     });
 
     final flutterSub = _flutterButton.root.onClick.listen((_) {
       completer.complete(Layout.flutter);
+    });
+    final flutterKeydownSub = _flutterButton.root.onKeyDown.listen((event) {
+      if (event.key == 'Enter') {
+        completer.complete(Layout.flutter);
+      }
+    });
+    final flutterKeyupSub = _flutterButton.root.onKeyUp.listen((event) {
+      if (event.key == ' ' || event.key == 'Spacebar') {
+        completer.complete(Layout.flutter);
+      }
     });
 
     final cancelSub = _cancelButton.onClick.listen((_) {
@@ -1164,7 +1196,11 @@ class NewPadDialog {
 
     void handleClosing(Event _) {
       dartSub.cancel();
+      dartKeydownSub.cancel();
+      dartKeyupSub.cancel();
       flutterSub.cancel();
+      flutterKeydownSub.cancel();
+      flutterKeyupSub.cancel();
       cancelSub.cancel();
       _mdcDialog.unlisten('MDCDialog:closing', handleClosing);
     }

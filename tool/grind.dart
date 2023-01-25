@@ -177,7 +177,7 @@ deploy() async {
 
   final app = yaml.loadYaml(File('web/app.yaml').readAsStringSync()) as Map;
 
-  final handlers = app['handlers'];
+  final handlers = app['handlers'] as List;
   var isSecure = false;
 
   for (final m in handlers) {
@@ -218,8 +218,6 @@ void generateProtos() {
     throw 'Error generating the Protobuf classes\n${result.stderr}';
   }
 
-  // generate common_server_proto.g.dart
-  Pub.run('build_runner', arguments: ['build', '--delete-conflicting-outputs']);
   Process.runSync('dart', ['format', 'lib/src/protos']);
 }
 

@@ -7,6 +7,7 @@ import 'package:meta/meta.dart';
 
 import '../context.dart';
 import '../dart_pad.dart';
+import '../editing/codemirror_options.dart';
 import '../editing/editor.dart';
 import '../elements/analysis_results_controller.dart';
 import '../elements/button.dart';
@@ -55,6 +56,20 @@ abstract class EditorUi {
     keys.bind(['shift-ctrl-/', 'shift-macctrl-/'], () {
       showKeyboardDialog();
     }, 'Keyboard Shortcuts');
+
+    _initEscapeTabSwitching();
+  }
+
+  // When switching to vim-insert mode, disable esc tab and esc shift-tab
+  // as the esc key is required to exit the mode
+  void _initEscapeTabSwitching() {
+    editor.onVimModeChange.listen((e) {
+      if (editor.keyMap == 'vim-insert') {
+        editor.setOption('extraKeys', extraKeysWithoutEscapeTab);
+      } else {
+        editor.setOption('extraKeys', extraKeysWithEscapeTab);
+      }
+    });
   }
 
   Future<void> showKeyboardDialog() async {
@@ -284,6 +299,9 @@ class Channel {
   final String flutterVersion;
   final bool hidden;
 
+  /// SDK experiment flags enabled for this channel.
+  final List<String> experiments;
+
   static Future<Channel> fromVersion(String name, {bool hidden = false}) async {
     var rootUrl = urlMapping[name];
     // If the user provided bad URL query parameter (`?channel=nonsense`),
@@ -297,6 +315,7 @@ class Channel {
       dartVersion: versionResponse.sdkVersionFull,
       flutterVersion: versionResponse.flutterVersion,
       hidden: hidden,
+      experiments: versionResponse.experiment,
     );
   }
 
@@ -304,6 +323,7 @@ class Channel {
     'stable': stableServerUrl,
     'beta': betaServerUrl,
     'old': oldServerUrl,
+    'master': masterServerUrl,
     'dev': devServerUrl,
   };
 
@@ -312,6 +332,7 @@ class Channel {
     required this.dartVersion,
     required this.flutterVersion,
     required this.hidden,
+    required this.experiments,
   });
 }
 
@@ -349,7 +370,7 @@ class KeyboardDialog {
 
     final completer = Completer<DialogResult>();
 
-    _okButton.onClick.listen((_) {
+    final okButtonSub = _okButton.onClick.listen((_) {
       final bool vimSet = _vimSwitch.checked!;
 
       // change keyMap if needed and *remember* their choice for next startup
@@ -359,13 +380,22 @@ class KeyboardDialog {
       } else {
         if (currentKeyMap != 'default') editor.keyMap = 'default';
         window.localStorage['codemirror_keymap'] = 'default';
+        editor.setOption('extraKeys', extraKeysWithEscapeTab);
       }
       completer.complete(vimSet ? DialogResult.yes : DialogResult.ok);
     });
 
+    void handleClosing(Event _) {
+      completer.complete(DialogResult.cancel);
+    }
+
+    _mdcDialog.listen('MDCDialog:closing', handleClosing);
+
     _mdcDialog.open();
 
     return completer.future.then((v) {
+      okButtonSub.cancel();
+      _mdcDialog.unlisten('MDCDialog:closing', handleClosing);
       _mdcDialog.close();
       return v;
     });

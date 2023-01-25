@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:html' hide Document, Console;
 import 'dart:math' as math;
 
@@ -15,7 +16,6 @@ import 'context.dart';
 import 'core/dependencies.dart';
 import 'core/modules.dart';
 import 'dart_pad.dart';
-import 'editing/codemirror_options.dart';
 import 'editing/editor_codemirror.dart';
 import 'elements/analysis_results_controller.dart';
 import 'elements/button.dart';
@@ -140,16 +140,17 @@ class Embed extends EditorUi {
         EmbedTabController(MDCTabBar(querySelector('.mdc-tab-bar')!), dialog);
 
     final tabNames = options.mode == EmbedMode.html
-        ? const ['editor', 'html', 'css', 'solution', 'test']
-        : const ['editor', 'solution', 'test'];
+        ? const ['dart', 'html', 'css', 'solution', 'test']
+        : const ['dart', 'solution', 'test'];
 
-    for (final name in tabNames) {
-      final String contextName = (name == 'editor') ? 'dart' : name;
+    for (final tabName in tabNames) {
+      // The HTML ID and ga.sendEvent use 'editor' for the 'dart' tab.
+      final String contextName = (tabName == 'dart') ? 'editor' : tabName;
       tabController.registerTab(
-        TabElement(querySelector('#$name-tab')!, name: contextName,
+        TabElement(querySelector('#$contextName-tab')!, name: tabName,
             onSelect: () {
-          ga.sendEvent('edit', name);
-          context.switchTo(contextName);
+          ga.sendEvent('edit', contextName);
+          context.switchTo(tabName);
           editor.resize();
           editor.focus();
         }),
@@ -255,13 +256,12 @@ class Embed extends EditorUi {
     hintBox = FlashBox(querySelector('#hint-box') as DivElement);
     final editorTheme = isDarkMode ? 'darkpad' : 'dartpad';
 
-    editor = editorFactory.createFromElement(
-        querySelector('#user-code-editor')!,
-        options: codeMirrorOptions)
-      ..theme = editorTheme
-      ..mode = 'dart'
-      ..keyMap = window.localStorage['codemirror_keymap'] ?? 'default'
-      ..showLineNumbers = true;
+    editor =
+        editorFactory.createFromElement(querySelector('#user-code-editor')!)
+          ..theme = editorTheme
+          ..mode = 'dart'
+          ..keyMap = window.localStorage['codemirror_keymap'] ?? 'default'
+          ..showLineNumbers = true;
 
     if (!showInstallButton) {
       querySelector('#install-button')!.setAttribute('hidden', '');
@@ -306,7 +306,19 @@ class Embed extends EditorUi {
       DElement(querySelector('#issues-toggle')!),
       snackbar,
     )..onItemClicked.listen((item) {
-        _jumpTo(item.line, item.charStart, item.charLength, focus: true);
+        if (item.sourceName == 'test.dart') {
+          // must be test editor
+          if (!_showTestCode) {
+            _showTestCode = true;
+            showTestCodeCheckmark.toggleClass('hide', !_showTestCode);
+            tabController.setTabVisibility('test', _showTestCode);
+          }
+          tabController.selectTab('test');
+          _jumpToTest(item.line, item.charStart, item.charLength, focus: true);
+        } else {
+          tabController.selectTab('dart');
+          _jumpTo(item.line, item.charStart, item.charLength, focus: true);
+        }
       });
 
     if (options.mode == EmbedMode.flutter ||
@@ -668,7 +680,7 @@ class Embed extends EditorUi {
     final activeTabName = tabController.selectedTab.name;
 
     switch (activeTabName) {
-      case 'editor':
+      case 'dart':
         return context.dartSource;
       case 'css':
         return context.cssSource;
@@ -790,7 +802,57 @@ class Embed extends EditorUi {
   void displayIssues(List<AnalysisIssue> issues) {
     testResultBox.hide();
     hintBox.hide();
-    analysisResultsController.display(issues);
+
+    // Handle possiblity of issues in appended test code.
+    analysisResultsController
+        .display(detectIssuesInTestSourceAndModifyIssuesAccordingly(issues));
+  }
+
+  // We append test source code to the user's source code, because of
+  // this we possibly have a special situation..
+  // There could be warnings or errors in the *TEST* code that is being
+  // appended to the user's dart source.
+  // This can result in issues with line numbers that are
+  // outside the user's dart source.  This would confusing to the users.
+  // We are going to do one of two things:
+  // - If the test source is currently HIDDEN and the issue kind is
+  // not and `error` (it is `info` or `warning`) then we will REMOVE
+  // the issue from the list so as to "hide" it.
+  // - If the test source is showing, *or* if the issue is an `error`, we are
+  // going to adjust the line number so it reflects where it is in the
+  // test source editor, and we will set the `sourceName` for the issue to
+  // `test.dart`.
+  List<AnalysisIssue> detectIssuesInTestSourceAndModifyIssuesAccordingly(
+      List<AnalysisIssue> issues) {
+    final int dartSourceLineCount = context.dartSourceLineCount;
+    final int dartSourceCharCount = context.dartSource.length;
+    issues = issues.map((issue) {
+      if (issue.line > dartSourceLineCount) {
+        // This is in the test source, do we adjust or hide it ?
+        // (We never hide errors).
+        if (issue.kind != 'error' && !_showTestCode) {
+          // We want to remove the message later so flag it.
+          return AnalysisIssue(line: -99);
+        } else {
+          // Adjust the line number, charStart and set sourceName
+          // to indicate this issue is in the test code.
+          return AnalysisIssue(
+              kind: issue.kind,
+              line: (issue.line - dartSourceLineCount - 1),
+              message: issue.message,
+              sourceName: 'test.dart',
+              hasFixes: issue.hasFixes,
+              charStart: (issue.charStart - dartSourceCharCount),
+              charLength: issue.charLength,
+              url: issue.url,
+              diagnosticMessages: issue.diagnosticMessages,
+              correction: issue.correction);
+        }
+      }
+      return issue;
+    }).toList();
+    issues.removeWhere((issue) => issue.line == -99);
+    return issues;
   }
 
   void _showInstallPage() {
@@ -851,6 +913,16 @@ class Embed extends EditorUi {
 
   void _jumpTo(int line, int charStart, int charLength, {bool focus = false}) {
     final doc = context.dartDocument;
+
+    doc.select(
+        doc.posFromIndex(charStart), doc.posFromIndex(charStart + charLength));
+
+    if (focus) context.focus();
+  }
+
+  void _jumpToTest(int line, int charStart, int charLength,
+      {bool focus = false}) {
+    final doc = context.testDocument;
 
     doc.select(
         doc.posFromIndex(charStart), doc.posFromIndex(charStart + charLength));
@@ -1173,6 +1245,7 @@ class EmbedContext extends Context {
   @override
   set dartSource(String value) {
     _dartDoc.value = value;
+    _dartDocLineCount = countLinesInString(value);
   }
 
   @override
@@ -1192,6 +1265,10 @@ class EmbedContext extends Context {
   set solutionSource(String value) {
     _solutionDoc.value = value;
   }
+
+  int _dartDocLineCount = 0;
+
+  int get dartSourceLineCount => _dartDocLineCount;
 
   Document get htmlDocument => _htmlDoc;
 
@@ -1292,6 +1369,10 @@ class EmbedContext extends Context {
 
   @override
   bool get isFocused => focusedEditor == 'dart' && editor.hasFocus;
+
+  /// Counts the number of lines in [str].
+  static int countLinesInString(String str) =>
+      LineSplitter().convert(str).length;
 }
 
 final RegExp _flutterUrlExp =
